@@ -10,6 +10,27 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 class ParticipateInForumTest extends TestCase
 {
     use DatabaseMigrations;
+
+    protected $thread;
+
+    protected $reply;
+
+    protected  $user;
+
+    protected function setUp()
+    {
+        parent::setUp();
+        $this->thread = factory('App\Thread')->create();
+        $this->reply = factory('App\Reply')->create();
+        $this->user = factory('App\User')->create();
+    }
+
+    public function testUnAuthenticatedUsersCantReply()
+    {
+        $this->expectException('Illuminate\Auth\AuthenticationException');
+        $this->post($this->thread->path() . '/replies', []);
+    }
+
     /**
      * A basic test example.
      *
@@ -17,15 +38,11 @@ class ParticipateInForumTest extends TestCase
      */
     public function testAnAuthenticatedUserMayParticipateInForum()
     {
-        $this->be($user = factory('App\User')->create());
+        $this->be($this->user);
 
-        $thread = factory('App\Thread')->create();
+        $this->post($this->thread->path() . '/replies', $this->reply->toArray());
 
-        $reply = factory('App\Reply')->create();
-
-        $this->post($thread->path() . '/replies', $reply->toArray());
-
-        $this->get($thread->path())
-            ->assertSee($reply->body);
+        $this->get($this->thread->path())
+            ->assertSee($this->reply->body);
     }
 }
