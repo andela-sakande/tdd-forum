@@ -11,14 +11,12 @@ class CreateThreadTest extends TestCase
 {
     use DatabaseMigrations;
 
-    protected $user;
-
     protected $thread;
 
     protected function setUp()
     {
         parent::setUp();
-        $this->user = factory('App\User')->create();
+
         $this->thread = factory('App\Thread')->create();
     }
 
@@ -29,7 +27,7 @@ class CreateThreadTest extends TestCase
      */
     public function testAuthenticatedUserCanCreateThread()
     {
-        $this->actingAs($this->user);
+        $this->signIn();
         $this->post('/threads', $this->thread->toArray());
 
         $this->get($this->thread->path())
@@ -41,12 +39,19 @@ class CreateThreadTest extends TestCase
      *
      * @return void
      */
-    public function testAuthenticatedGuestCantCreateThread()
+    public function testUnAuthenticatedGuestCantCreateThread()
     {
-        $this->expectException('Illuminate\Auth\AuthenticationException');
-        $this->post('/threads', []);
+        $this->withExceptionHandling();
+        $this->get('/threads/create')
+            ->assertRedirect('/login');
+        $this->post('/threads')
+            ->assertRedirect('/login');
+    }
 
-//        $this->get($this->thread->path())
-//            ->assertSee($this->thread->title)->assertSee($this->thread->body);
+    public function testGuestCannotSeeCreatedPage()
+    {
+        $this->withExceptionHandling();
+        $this->get('/threads/create')
+            ->assertRedirect('/login');
     }
 }

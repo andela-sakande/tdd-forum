@@ -20,15 +20,15 @@ class ParticipateInForumTest extends TestCase
     protected function setUp()
     {
         parent::setUp();
-        $this->thread = factory('App\Thread')->create();
-        $this->reply = factory('App\Reply')->create();
-        $this->user = factory('App\User')->create();
+        $this->thread = create('App\Thread');
+        $this->reply = create('App\Reply');
+        $this->user = create('App\User');
     }
 
     public function testUnAuthenticatedUsersCantReply()
     {
-        $this->expectException('Illuminate\Auth\AuthenticationException');
-        $this->post($this->thread->path() . '/replies', []);
+        $this->withExceptionHandling();
+        $this->post($this->thread->path() . '/replies', $this->reply->toArray());
     }
 
     /**
@@ -38,7 +38,7 @@ class ParticipateInForumTest extends TestCase
      */
     public function testAnAuthenticatedUserMayParticipateInForum()
     {
-        $this->be($this->user);
+        $this->signIn();
 
         $this->post($this->thread->path() . '/replies', $this->reply->toArray());
 
