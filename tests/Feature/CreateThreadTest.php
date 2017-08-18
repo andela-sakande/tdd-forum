@@ -17,7 +17,7 @@ class CreateThreadTest extends TestCase
     {
         parent::setUp();
 
-        $this->thread = factory('App\Thread')->create();
+        $this->thread = make('App\Thread');
     }
 
     /**
@@ -28,9 +28,9 @@ class CreateThreadTest extends TestCase
     public function testAuthenticatedUserCanCreateThread()
     {
         $this->signIn();
-        $this->post('/threads', $this->thread->toArray());
+        $response = $this->post('/threads', $this->thread->toArray());
 
-        $this->get($this->thread->path())
+        $this->get($response->headers->get('Location'))
             ->assertSee($this->thread->title)->assertSee($this->thread->body);
     }
 
@@ -42,7 +42,7 @@ class CreateThreadTest extends TestCase
     public function testUnAuthenticatedGuestCantCreateThread()
     {
         $this->withExceptionHandling();
-        
+
         $this->get('/threads/create')
             ->assertRedirect('/login');
 
@@ -50,10 +50,34 @@ class CreateThreadTest extends TestCase
             ->assertRedirect('/login');
     }
 
-    public function testGuestCannotSeeCreatedPage()
+    public function testThreadRequiresTitle()
     {
-        $this->withExceptionHandling();
-        $this->get('/threads/create')
-            ->assertRedirect('/login');
+        $this->publishThread(['title' => null])
+            ->assertSessionHasErrors('title');
+    }
+
+    public function testThreadRequiresBody()
+    {
+        $this->publishThread(['body' => null])
+            ->assertSessionHasErrors('body');
+    }
+
+    private function publishThread($overRides = [])
+    {
+        $this->withExceptionHandling()->signIn();
+        $thread = make('App\Thread', $overRides);
+
+        return $this->post('/threads', $thread->toArray());
+    }
+
+    public function testThreadRequiresValidChannel()
+    {
+        factory('App\Channel', 2)->create();
+
+        $this->publishThread(['channel_id' => null])
+            ->assertSessionHasErrors('channel_id');
+
+        $this->publishThread(['channel_id' => 999])
+            ->assertSessionHasErrors('channel_id');
     }
 }

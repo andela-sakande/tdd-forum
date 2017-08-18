@@ -28,7 +28,8 @@ class ParticipateInForumTest extends TestCase
     public function testUnAuthenticatedUsersCantReply()
     {
         $this->withExceptionHandling();
-        $this->post($this->thread->path() . '/replies', $this->reply->toArray());
+        $this->post($this->thread->path() . '/replies', [])
+            ->assertRedirect('/login');
     }
 
     /**
@@ -44,5 +45,14 @@ class ParticipateInForumTest extends TestCase
 
         $this->get($this->thread->path())
             ->assertSee($this->reply->body);
+    }
+    
+    public function testARequestRequiresABody()
+    {
+        $this->withExceptionHandling()->signIn();
+        $reply = make('App\Reply', ['body' => null]);
+        $this->post($this->thread->path() . '/replies', $reply->toArray())
+            ->assertSessionHasErrors('body');
+
     }
 }
