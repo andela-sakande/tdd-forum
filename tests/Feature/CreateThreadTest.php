@@ -42,8 +42,10 @@ class CreateThreadTest extends TestCase
     public function testUnAuthenticatedGuestCantCreateThread()
     {
         $this->withExceptionHandling();
+        
         $this->get('/threads/create')
             ->assertRedirect('/login');
+
         $this->post('/threads')
             ->assertRedirect('/login');
     }
